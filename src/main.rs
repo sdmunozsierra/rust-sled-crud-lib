@@ -1,35 +1,41 @@
 // main.rs
 
 use rust_sled_crud_lib::db::sled_db::SledDb;
+use rust_sled_crud_lib::db::models::Parent;
+use rust_sled_crud_lib::db::dd_object::DbObject;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Initialize the database at the specified path
     let db = SledDb::new("my_database")?;
 
-    // Insert a key-value pair into the database
-    db.insert(b"key1", b"value1")?;
-    println!("Inserted key1 => value1");
+    // Create a Parent object
+    let parent = Parent {
+        id: 1,
+        name: String::from("Parent1"),
+        children: vec![],
+    };
 
-    // Retrieve the value by key
-    if let Some(value) = db.get(b"key1")? {
-        println!(
-            "Retrieved key1 => {:?}",
-            String::from_utf8(value.to_vec()).unwrap()
-        );
+    // Insert the Parent object into the database
+    db.insert_object(&parent)?;
+    println!("Inserted parent with id 1");
+
+    // Retrieve the Parent object by key
+    if let Some(retrieved_parent) = db.get_object::<Parent>(parent.key())? {
+        println!("Retrieved parent: {:?}", retrieved_parent);
     } else {
-        println!("key1 not found");
+        println!("Parent with id 1 not found");
     }
 
-    // Remove the key-value pair
-    db.remove(b"key1")?;
-    println!("Removed key1");
+    // Remove the Parent object
+    db.remove_object(parent.key())?;
+    println!("Removed parent with id 1");
 
     // Verify the removal
-    if db.get(b"key1")?.is_none() {
-        println!("Verified removal of key1");
+    if db.get_object::<Parent>(parent.key())?.is_none() {
+        println!("Verified removal of parent with id 1");
     } else {
-        println!("key1 still exists");
+        println!("Parent with id 1 still exists");
     }
 
     // Flush changes to disk
