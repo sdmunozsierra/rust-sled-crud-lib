@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 use crate::db::dd_object::DbObject;
 
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Conversation {
     pub id: Uuid,
