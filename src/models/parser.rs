@@ -1,6 +1,5 @@
 use serde_json;
-use std::error::Error;
-use crate::models::message::ConversationData;
+use crate::models::conversation::ConversationData;
 
 /// Function to parse a JSON string into a ConversationData object
 pub fn parse_conversation_data(json_data: &str) -> Result<ConversationData, Box<dyn std::error::Error>> {

@@ -30,11 +30,11 @@ pub struct ConversationData {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum MetadataWrapper {
-    Common(CommonMetadata),
     Citations(CitationsMetadata),
     Finish(FinishMetadata),
     Source(SourceMetadata),
     Visibility(VisibilityMetadata),
+    Common(CommonMetadata),
 }
 
 /// Metadata with common fields
@@ -46,7 +46,7 @@ pub struct CommonMetadata {
     pub parent_id: Option<Uuid>,
     pub request_id: Option<String>,
     pub timestamp_: Option<String>,
-    pub model_switcher_deny: Vec<String>,
+    pub model_switcher_deny: Option<Vec<String>>,
 }
 
 /// Metadata for messages with citations and finish details
@@ -101,7 +101,7 @@ pub struct Message {
     pub update_time: Option<f64>,
     pub content: Content,
     pub status: String,
-    pub end_turn: bool,
+    pub end_turn: Option<bool>,
     pub weight: i32,
     #[serde(deserialize_with = "deserialize_metadata")]
     pub metadata: MetadataWrapper,
@@ -121,16 +121,16 @@ pub struct Author {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Content {
     pub content_type: String,
-    pub parts: Vec<String>,
+    pub parts: Option<Vec<String>>,
 }
 
 /// Node structure containing a message
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Node {
     pub id: Uuid,
-    pub message: Message,
-    pub parent: Uuid,
-    pub children: Vec<Uuid>,
+    pub message: Option<Message>,
+    pub parent: Option<Uuid>,
+    pub children: Option<Vec<Uuid>>,
 }
 
 /// Custom deserializer for MetadataWrapper
@@ -146,15 +146,26 @@ where
     // Wrap the map into a Value::Object
     let value = Value::Object(json_map);
 
+    // Determine the appropriate variant by checking for key existence
     if value.get("is_visually_hidden_from_conversation").is_some() {
-        serde_json::from_value(value).map(MetadataWrapper::Visibility).map_err(serde::de::Error::custom)
+        serde_json::from_value(value)
+            .map(MetadataWrapper::Visibility)
+            .map_err(serde::de::Error::custom)
     } else if value.get("citations").is_some() {
-        serde_json::from_value(value).map(MetadataWrapper::Citations).map_err(serde::de::Error::custom)
+        serde_json::from_value(value)
+            .map(MetadataWrapper::Citations)
+            .map_err(serde::de::Error::custom)
     } else if value.get("finish_details").is_some() {
-        serde_json::from_value(value).map(MetadataWrapper::Finish).map_err(serde::de::Error::custom)
+        serde_json::from_value(value)
+            .map(MetadataWrapper::Finish)
+            .map_err(serde::de::Error::custom)
     } else if value.get("message_source").is_some() {
-        serde_json::from_value(value).map(MetadataWrapper::Source).map_err(serde::de::Error::custom)
+        serde_json::from_value(value)
+            .map(MetadataWrapper::Source)
+            .map_err(serde::de::Error::custom)
     } else {
-        serde_json::from_value(value).map(MetadataWrapper::Common).map_err(serde::de::Error::custom)
+        serde_json::from_value(value)
+            .map(MetadataWrapper::Common)
+            .map_err(serde::de::Error::custom)
     }
 }
