@@ -2,18 +2,15 @@ mod db;
 mod models;
 mod repository;
 mod service;
-mod query;
 
 use crate::db::sled_mutex::SledDb;
 use crate::repository::{
-    user_repository::UserRepository, role_repository::RoleRepository,
+    user_repository::UserRepository, role_repository::RoleRepositoryImpl,
     conversation_repository::ConversationRepository,
 };
 use crate::service::user_service::UserService;
 use crate::service::conversation_service::ConversationService;
 use crate::models::role::Role;
-use crate::query::query_builder::QueryBuilder;
-use crate::query::sorting::{Sort,SortDirection};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -27,20 +24,20 @@ fn main() {
 
     // Create repositories
     let user_repository = UserRepository::new(Arc::clone(&sled_db));
-    let role_repository = RoleRepository::new(Arc::clone(&sled_db));
+    let role_repository = RoleRepositoryImpl::new(Arc::clone(&sled_db));
     let conversation_repository = ConversationRepository::new(Arc::clone(&sled_db));
 
     // Create services
-    let user_service = UserService::new(&user_repository, &role_repository);
+    let user_service = UserService::new(user_repository, role_repository);
     let conversation_service = ConversationService::new(conversation_repository);
 
     // Add roles
-    let admin_role: Role = Role {
-        id: Uuid::new_v4().to_string(),
+    let admin_role = Role {
+        id: Uuid::default().to_string(),
         name: "Admin".to_string(),
     };
     let user_role = Role {
-        id: Uuid::new_v4().to_string(),
+        id: Uuid::default().to_string(),
         name: "User".to_string(),
     };
 
@@ -50,13 +47,8 @@ fn main() {
 
     // Register a new user
     user_service
-    .register_user("johndoe".to_string(), "john@example.com".to_string())
-    .unwrap();
-
-user_service
-    .register_user("janedoe".to_string(), "jane@example.com".to_string())
-    .unwrap();
-
+        .register_user("johndoe".to_string(), "john@example.com".to_string())
+        .unwrap();
 
     // Retrieve the user ID for further operations
     let users = user_service.find_all_users();
@@ -119,14 +111,4 @@ user_service
     // Verify deletion
     let all_conversations = conversation_service.find_all_conversations();
     println!("Conversations after deletion: {:?}", all_conversations);
-
-        // Create a new query to find all users named "johndoe"
-    let query = QueryBuilder::new()
-        .where_eq("username", "johndoe")
-        .order_by("email", SortDirection::Ascending)
-        .build();
-
-    // Execute the query using the user repository
-    let filtered_users = query.execute(&user_repository);
-    println!("Filtered Users: {:?}", filtered_users);
 }

@@ -1,13 +1,19 @@
-use crate::repository::{user_repository::{Repository, UserRepository}, role_repository::{RoleRepository, RoleRepositoryImpl}};
-use crate::models::user::{User,Role};
+use crate::repository::{user_repository::UserRepository, role_repository::RoleRepository};
+use crate::repository::repository::Repository;
+use crate::models::user::User;
+use crate::models::role::Role;
 
-pub struct UserService {
-    user_repository: UserRepository,
-    role_repository: RoleRepositoryImpl,
+pub struct UserService<'a> {
+    user_repository: &'a UserRepository,
+    role_repository: &'a RoleRepository,
 }
 
-impl UserService {
-    pub fn new(user_repository: UserRepository, role_repository: RoleRepositoryImpl) -> Self {
+
+impl<'a> UserService<'a> {
+    pub fn new(
+        user_repository: &'a UserRepository,
+        role_repository: &'a RoleRepository,
+    ) -> Self {
         UserService {
             user_repository,
             role_repository,
@@ -16,7 +22,7 @@ impl UserService {
 
     pub fn register_user(&self, username: String, email: String) -> Result<(), String> {
         let user = User {
-            id: uuid::Uuid::default().to_string(),
+            id: uuid::Uuid::new_v4().to_string(),
             username,
             email,
             roles: vec![],  // Initialize with no roles
@@ -30,7 +36,7 @@ impl UserService {
 
     pub fn add_role_to_user(&self, user_id: String, role_id: String) -> Result<(), String> {
         if let Some(mut user) = self.user_repository.find_by_id(user_id.clone()) {
-            if let Some(role) = self.role_repository.find_by_id(&role_id.clone()) {
+            if let Some(role) = self.role_repository.find_by_id(role_id.clone()) {
                 user.roles.push(role);
                 return self.user_repository.save(user);
             }
@@ -47,7 +53,7 @@ impl UserService {
     }
 
     pub fn save_role(&self, role: &Role) -> Result<(), String> {
-        self.role_repository.save(role)
+        self.role_repository.save(role.clone())
     }
 
     pub fn find_all_users(&self) -> Vec<User> {
