@@ -1,3 +1,5 @@
+//src/db/sled_mutex.rs
+
 use sled::{Config, Db};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -5,7 +7,7 @@ use std::result::Result;
 
 /// Struct representing a thread-safe database using Sled
 pub struct SledDb {
-    db: Arc<Mutex<Db>>,
+    db: Arc<Db>,
 }
 
 impl SledDb {
@@ -15,16 +17,14 @@ impl SledDb {
         let config = Config::new().path(path);
         
         // Open the database with the given configuration
-        let db = config.open()?;
+        let db = Arc::new(config.open()?);
         
-        // Wrap the database in an Arc<Mutex<>> for thread safety
-        Ok(SledDb {
-            db: Arc::new(Mutex::new(db)),
-        })
+        // Wrap the database in an Arc for thread safety
+        Ok(SledDb { db })
     }
     
-    /// Example method to access the database
-    pub fn get_db(&self) -> Arc<Mutex<Db>> {
+    /// Access the underlying database
+    pub fn get_db(&self) -> Arc<Db> {
         Arc::clone(&self.db)
     }
 }

@@ -1,10 +1,12 @@
 // src/query/pagination.rs
 
+#[derive(Clone)]
 pub struct PageRequest {
     pub page: usize,
     pub size: usize,
 }
 
+#[derive(Debug)]
 pub struct Page<T> {
     pub content: Vec<T>,
     pub total_elements: usize,

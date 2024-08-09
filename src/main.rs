@@ -3,6 +3,8 @@ mod models;
 mod repository;
 mod service;
 mod query;
+mod conf;
+mod transaction;
 
 use crate::db::sled_mutex::SledDb;
 use crate::repository::{
@@ -13,17 +15,17 @@ use crate::service::user_service::UserService;
 use crate::service::conversation_service::ConversationService;
 use crate::models::role::Role;
 use crate::query::query_builder::QueryBuilder;
-use crate::query::sorting::{Sort,SortDirection};
+use crate::query::sorting::{Sort, SortDirection};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use uuid::Uuid;
 
 fn main() {
     // Initialize the database
     let db_path = Path::new("./my_database");
-    let sled_db = Arc::new(Mutex::new(
+    let sled_db = Arc::new(
         SledDb::new(db_path).expect("Failed to initialize database"),
-    ));
+    );
 
     // Create repositories
     let user_repository = UserRepository::new(Arc::clone(&sled_db));
@@ -35,7 +37,7 @@ fn main() {
     let conversation_service = ConversationService::new(conversation_repository);
 
     // Add roles
-    let admin_role: Role = Role {
+    let admin_role = Role {
         id: Uuid::new_v4().to_string(),
         name: "Admin".to_string(),
     };
@@ -50,13 +52,12 @@ fn main() {
 
     // Register a new user
     user_service
-    .register_user("johndoe".to_string(), "john@example.com".to_string())
-    .unwrap();
+        .register_user("johndoe".to_string(), "john@example.com".to_string())
+        .unwrap();
 
-user_service
-    .register_user("janedoe".to_string(), "jane@example.com".to_string())
-    .unwrap();
-
+    user_service
+        .register_user("janedoe".to_string(), "jane@example.com".to_string())
+        .unwrap();
 
     // Retrieve the user ID for further operations
     let users = user_service.find_all_users();
@@ -120,7 +121,7 @@ user_service
     let all_conversations = conversation_service.find_all_conversations();
     println!("Conversations after deletion: {:?}", all_conversations);
 
-        // Create a new query to find all users named "johndoe"
+    // Create a new query to find all users named "johndoe"
     let query = QueryBuilder::new()
         .where_eq("username", "johndoe")
         .order_by("email", SortDirection::Ascending)
